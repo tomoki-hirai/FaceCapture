@@ -28,6 +28,9 @@
     var videoInput = document.getElementById('inputVideo'); // 変数として格納
     var canvas = document.getElementById("canvas");         // canvas 要素の取得
     var context = canvas.getContext("2d");                  // canvas の context の取得
+    var counter = 0;//まとめるときのカウンタ
+    var fileSum = 20;//まとめて送るデータ数
+    var collections = {};//まとめる用の配列
 
     // clmtrackr の開始
     var ctracker = new clm.tracker();// インスタンスを取得
@@ -40,7 +43,7 @@
       // positions = [[x_0, y_0], [x_1,y_1], ... ]
       showData(positions);                                  // データの表示
       context.clearRect(0, 0, canvas.width, canvas.height); // canvas をクリア
-      tracker.draw(canvas);                                 // canvas にトラッキング結果を描画
+      // tracker.draw(canvas);                                 // canvas にトラッキング結果を描画
     }
     positionLoop();
 
@@ -55,6 +58,43 @@
       }
       var dat = document.getElementById("dat");             // データ表示用div要素の取得
       dat.innerHTML = str;                                  // データ文字列の表示
+      
+      // データまとめる
+      // 座標だけ送ってるから，タイムスタンプもいるかな
+      if(pos!=false){
+        var obj = {data:pos};
+        addData(obj);
+      }
+    }
+  // データをまとめる
+  // 一回に送るデータ数はfileSumを変えて
+    function addData(data){
+      var key = String(counter);
+      collections[key] = data;
+      counter++;
+      if(counter==fileSum){
+        console.log(collections);
+        console.log(JSON.stringify(collections));
+        doPost('http://localhost:3000',JSON.stringify(collections));
+        counter=0;
+        collections = {};
+      }
+    }
+  // POS投げる部分
+    function doPost(url, data) {
+      console.log(url);
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", url);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.onload = () => {
+        console.log(xhr.status);
+        console.log("success!");
+      };
+      xhr.onerror = () => {
+        console.log(xhr.status);
+        console.log("error!");
+      };
+      xhr.send(data);
     }
 
   </script>
